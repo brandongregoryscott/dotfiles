@@ -14,4 +14,5 @@ function showdotfiles() {
 }
 alias showhiddenfiles='showdotfiles'
 alias hidehiddenfiles='hidedotfiles'
-
+alias timestamp="node -e 'console.log(new Date().toISOString())'"
+alias ts='timestamp'

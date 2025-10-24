@@ -1,3 +1,3 @@
 export GOPATH=~/go
-export PATH=$GOPATH/bin:$PATH
+export PATH=$GOPATH/bin:/opt/homebrew/opt/libpq/bin:$PATH
 
