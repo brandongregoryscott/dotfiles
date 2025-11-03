@@ -1,5 +1,6 @@
 alias gs='git status'
 alias openpr='gh pr create --web'
+alias viewpr='gh pr view'
 alias reload='omz reload'
 alias sourceme='omz reload'
 function hidedotfiles() {
