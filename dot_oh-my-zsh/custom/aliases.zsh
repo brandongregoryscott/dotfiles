@@ -17,3 +17,21 @@ alias showhiddenfiles='showdotfiles'
 alias hidehiddenfiles='hidedotfiles'
 alias timestamp="node -e 'console.log(new Date().toISOString())'"
 alias ts='timestamp'
+
+# gcsquash(["--from <branch>"] <commit message>)
+# Soft resets the current branch from the origin branch, stages the changes, and then commits
+# with the given message. Defaults to main branch.
+# https://stackoverflow.com/a/50880042
+function gcsquash() {
+	ORIGIN_BRANCH=`git_main_branch`
+	if [[ $1 == "--from" ]] || [[ $1 == "-f" ]];
+	then
+		ORIGIN_BRANCH=$2
+		shift
+		shift
+	fi
+
+	git reset --soft $ORIGIN_BRANCH
+	git add -A
+	git commit -m "$@"
+}
