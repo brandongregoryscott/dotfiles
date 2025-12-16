@@ -3,6 +3,7 @@ alias openpr='gh pr create --web'
 alias viewpr='gh pr view'
 alias reload='omz reload'
 alias sourceme='omz reload'
+alias tf-dev='node ~/terrafaker/bin/dev.js'
 function hidedotfiles() {
 	defaults write com.apple.finder AppleShowAllFiles NO
 	killall Finder /System/Library/CoreServices/Finder.app
