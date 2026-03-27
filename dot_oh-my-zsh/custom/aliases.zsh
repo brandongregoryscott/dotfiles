@@ -18,6 +18,7 @@ alias showhiddenfiles='showdotfiles'
 alias hidehiddenfiles='hidedotfiles'
 alias timestamp="node -e 'console.log(new Date().toISOString())'"
 alias ts='timestamp'
+alias python='python3'
 
 # gcsquash(["--from <branch>"] <commit message>)
 # Soft resets the current branch from the origin branch, stages the changes, and then commits
