@@ -37,3 +37,42 @@ function gcsquash() {
 	git add -A
 	git commit -m "$@"
 }
+
+# wav2mp3 <file|directory> [bitrate]
+# Converts a wav or directory of wav files to mp3s at the specified
+wav2mp3() {
+  local bitrate="${2:-320k}"
+  local target="$1"
+
+  if [[ -z "$target" ]]; then
+    echo "Usage: wav2mp3 <file|directory> [bitrate]" >&2
+    echo "  bitrate defaults to 320k" >&2
+    return 1
+  fi
+
+  if [[ -f "$target" ]]; then
+    # Single file
+    [[ "$target" != *.wav ]] && { echo "Not a .wav file: $target" >&2; return 1; }
+    echo "Converting: $target"
+    ffmpeg -i "$target" -codec:a libmp3lame -b:a "$bitrate" "${target%.wav}.mp3"
+
+  elif [[ -d "$target" ]]; then
+    local wavs=("${(@f)$(find "$target" -maxdepth 1 -type f -iname '*.wav')}")
+    if [[ ${#wavs[@]} -eq 0 ]]; then
+      echo "No .wav files found in $target" >&2
+      return 1
+    fi
+    local count=${#wavs[@]}
+    local i=1
+    for f in "${wavs[@]}"; do
+      echo "[$i/$count] Converting: $(basename "$f")"
+      ffmpeg -i "$f" -codec:a libmp3lame -b:a "$bitrate" "${f%.wav}.mp3"
+      ((i++))
+    done
+    echo "Done. Converted $count files at $bitrate."
+
+  else
+    echo "Not found: $target" >&2
+    return 1
+  fi
+}
