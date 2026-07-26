@@ -76,3 +76,61 @@ wav2mp3() {
     return 1
   fi
 }
+
+# Usage: samplerename <folder> <base-name>
+# Example: samplerename "/Users/Brandon/Music/Samples/WG PACK 1/Kicks" "Kick"
+samplerename() {
+  if [[ $# -lt 2 ]]; then
+    echo "Usage: samplerename <folder> <base-name> [--dry-run]"
+    return 1
+  fi
+
+  local folder="$1"
+  local base="$2"
+  local dry=0
+
+  [[ "$3" == "--dry-run" ]] && dry=1
+
+  if [[ ! -d "$folder" ]]; then
+    echo "Error: '$folder' is not a directory"
+    return 1
+  fi
+
+  local -a files
+  files=("$folder"/*(N.))
+
+  if [[ ${#files} -eq 0 ]]; then
+    echo "No files found in '$folder'"
+    return 1
+  fi
+
+  # Pad width: 2 digits under 100 files, 3 digits for 100+
+  local pad=2
+  (( ${#files} >= 100 )) && pad=3
+
+  local i=1
+  local f
+  for f in "${files[@]}"; do
+    local ext="${f##*.}"
+    # If the file has no extension, ext == f basename — skip the dot
+    [[ "$ext" == "$f:t" ]] && ext=""
+    [[ -n "$ext" ]] && ext=".$ext"
+
+    local newname
+    newname="$(printf "%s %0${pad}d%s" "$base" "$i" "$ext")"
+    local dest="$folder/$newname"
+
+    if (( dry )); then
+      echo "'${f:t}' -> '$newname'"
+    else
+      mv -n -- "$f" "$dest" && echo "Renamed: $newname"
+    fi
+    ((i++))
+  done
+
+  if (( dry )); then
+    echo "\nDry run — no files moved."
+  else
+    echo "\nDone. Renamed $((i-1)) files."
+  fi
+}
