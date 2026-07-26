@@ -134,3 +134,52 @@ samplerename() {
     echo "\nDone. Renamed $((i-1)) files."
   fi
 }
+
+# Usage: wavstrip <file.wav>   or   wavstrip <folder>
+# Strips all metadata chunks (INFO, LIST, id3, IXML, cue, etc.) from WAV files.
+# With a folder, processes every .wav inside it.
+#
+# What gets removed:
+#   INFO chunks — artist, title, date, genre, comment, etc.
+#   LIST chunks — RIFF LIST metadata
+#   id3 / ID3 chunks — embedded ID3 tags
+#   IXML / iXML — broadcast/production metadata
+#   cue  — cue markers
+#   Everything non-audio that ffmpeg can drop
+wavstrip() {
+  if [[ $# -lt 1 ]]; then
+    echo "Usage: wavstrip <file.wav | folder> [--dry-run]"
+    return 1
+  fi
+
+  local target="$1"
+  local dry=0
+  [[ "$2" == "--dry-run" ]] && dry=1
+
+  local -a files
+  if [[ -d "$target" ]]; then
+    files=("$target"/*.wav(N.))
+    files+=("$target"/*.WAV(N.))
+    [[ ${#files} -eq 0 ]] && { echo "No .wav files found in '$target'"; return 1; }
+  elif [[ -f "$target" ]]; then
+    files=("$target")
+  else
+    echo "Error: '$target' is not a file or directory"
+    return 1
+  fi
+
+  local tmp
+  for f in "${files[@]}"; do
+    tmp="${f:h}/.${f:t}-stripped.wav"
+
+    if (( dry )); then
+      echo "Would strip: ${f:t}"
+    else
+      ffmpeg -y -i "$f" -map_metadata -1 -c:a copy -fflags +bitexact -flags:v +bitexact -flags:a +bitexact "$tmp" 2>/dev/null \
+        && mv "$tmp" "$f" \
+        && echo "Stripped: ${f:t}"
+    fi
+  done
+
+  (( ! dry )) && echo "\nDone. Stripped ${#files} file(s)."
+}
