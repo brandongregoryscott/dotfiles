@@ -77,19 +77,29 @@ wav2mp3() {
   fi
 }
 
-# Usage: samplerename <folder> <base-name>
-# Example: samplerename "/Users/Brandon/Music/Samples/WG PACK 1/Kicks" "Kick"
+# Usage: samplerename <folder> <base-name> [start] [--dry-run]
+# Example: samplerename "/Users/Brandon/Music/Samples/WG PACK 1/Hi-Hats" "HH" 6
 samplerename() {
   if [[ $# -lt 2 ]]; then
-    echo "Usage: samplerename <folder> <base-name> [--dry-run]"
+    echo "Usage: samplerename <folder> <base-name> [start] [--dry-run]"
+    echo "  start     Starting number (default: 1)"
     return 1
   fi
 
   local folder="$1"
   local base="$2"
+  local start=1
   local dry=0
 
-  [[ "$3" == "--dry-run" ]] && dry=1
+  for arg in "$@"; do
+    case "$arg" in
+      --dry-run) dry=1 ;;
+    esac
+  done
+
+  if [[ -n "$3" && "$3" =~ '^[0-9]+$' ]]; then
+    start="$3"
+  fi
 
   if [[ ! -d "$folder" ]]; then
     echo "Error: '$folder' is not a directory"
@@ -104,20 +114,14 @@ samplerename() {
     return 1
   fi
 
-  # Pad width: 2 digits under 100 files, 3 digits for 100+
-  local pad=2
-  (( ${#files} >= 100 )) && pad=3
-
-  local i=1
+  local i="$start"
   local f
   for f in "${files[@]}"; do
     local ext="${f##*.}"
-    # If the file has no extension, ext == f basename — skip the dot
     [[ "$ext" == "$f:t" ]] && ext=""
     [[ -n "$ext" ]] && ext=".$ext"
 
-    local newname
-    newname="$(printf "%s %0${pad}d%s" "$base" "$i" "$ext")"
+    local newname="${base} ${i}${ext}"
     local dest="$folder/$newname"
 
     if (( dry )); then
@@ -131,7 +135,7 @@ samplerename() {
   if (( dry )); then
     echo "\nDry run — no files moved."
   else
-    echo "\nDone. Renamed $((i-1)) files."
+    echo "\nDone. Renamed $((i - start)) file(s) (${start}–$((i - 1)))."
   fi
 }
 
