@@ -187,3 +187,57 @@ wavstrip() {
 
   (( ! dry )) && echo "\nDone. Stripped ${#files} file(s)."
 }
+
+# Concatenates multiple drum samples into one file
+mkdrumkit() {
+  setopt localoptions localtraps
+
+  local tmp="tmp.mkdrumkit"
+  rm -rf "$tmp"
+  mkdir "$tmp"
+
+  # Collect .wav files (skip joined.wav), sort naturally
+  local -a sources
+  sources=(${(f)"$(find . -maxdepth 1 -name '*.wav' ! -name 'joined.wav' | sort -V)"})
+
+  if (( ${#sources} == 0 )); then
+    echo "No .wav files found."
+    return 1
+  fi
+
+  local count=1
+  local src
+  for src in "${sources[@]}"; do
+    local dest="$tmp/${count}.wav"
+    # Normalize to 48k stereo, fix any header weirdness
+    ffmpeg -i "$src" -ac 2 -ar 48000 -f wav "$dest" &>/dev/null || {
+      echo "Failed: $src"
+      rm -rf "$tmp"
+      return 1
+    }
+    ((count++))
+  done
+
+  pushd "$tmp" >/dev/null || return 1
+
+  # Concatenate all normalized files in order
+  local -a joins
+  joins=(${(f)"$(ls [0-9]*.wav | sort -n -t. -k1)"})
+  shnjoin -O always "${joins[@]}" || {
+    echo "shnjoin failed"
+    popd >/dev/null
+    rm -rf "$tmp"
+    return 1
+  }
+
+  mv joined.wav .. || {
+    echo "Failed to move joined.wav"
+    popd >/dev/null
+    rm -rf "$tmp"
+    return 1
+  }
+
+  popd >/dev/null
+  rm -rf "$tmp"
+  echo "Done → joined.wav ($((count - 1)) files)"
+}
